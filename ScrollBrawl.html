@@ -1442,12 +1442,7 @@ function startGame(){
   raf=requestAnimationFrame(mainLoop);
 }
 
-function restart(){
-  cancelAnimationFrame(raf);
-  stopMusic(); currentTrack=-1;
-  ['endCard','bossHp','levelCard','levelUpCard','pauseCard'].forEach(id=>g(id).style.display='none');
-  startGame();
-}
+
 </script>
 </body>
 </html>
