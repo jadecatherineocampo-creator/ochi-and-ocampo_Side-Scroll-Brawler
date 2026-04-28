@@ -13,6 +13,12 @@
 </head>
 <body>
   <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+  <!-- 攻撃効果音 -->
+  <audio id="hitSound1" src="hit1.wav"></audio>
+  <audio id="hitSound2" src="hit2.wav"></audio>
+  <audio id="hitSound3" src="hit3.wav"></audio>
+
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
@@ -24,7 +30,7 @@
     let cameraX = 0;
     let stageClear = false;
     let clearDistance = 0;
-    let score = 0; // スコア追加
+    let score = 0;
 
     function drawBackground() {
       ctx.fillStyle = "#444";
@@ -51,7 +57,7 @@
         this.comboStep = 0;
         this.invincible = false;
         this.dashSpeed = 12;
-        this.comboResetTimer = 0; // コンボリセット用
+        this.comboResetTimer = 0;
       }
 
       update(enemies) {
@@ -59,8 +65,8 @@
           let dx = 0, dy = 0;
           if (keys["a"] || keys["arrowleft"]) dx -= this.speed;
           if (keys["d"] || keys["arrowright"]) dx += this.speed;
-          if (keys["w"] || keys["arrowup"] || keys["pageup"]) dy -= this.speed;
-          if (keys["s"] || keys["arrowdown"] || keys["pagedown"]) dy += this.speed;
+          if (keys["w"] || keys["arrowup"]) dy -= this.speed;
+          if (keys["s"] || keys["arrowdown"]) dy += this.speed;
 
           if (!this.isAttacking) {
             this.x += dx;
@@ -76,7 +82,6 @@
               if (target) {
                 let dirX = Math.sign(target.x - this.x);
                 let dirY = Math.sign(target.y - this.y);
-                // ダッシュ攻撃時に敵をすり抜けないように制御
                 if (!this.checkCollision(target)) {
                   this.x += dirX * this.dashSpeed;
                   this.y += dirY * (this.dashSpeed / 2);
@@ -96,13 +101,13 @@
               this.isAttacking = false;
               this.invincible = false;
               this.comboStep = (this.comboStep + 1) % 3;
-              this.comboResetTimer = 180; // 3秒でリセット
+              this.comboResetTimer = 180;
             }
           } else {
             if (this.comboResetTimer > 0) {
               this.comboResetTimer--;
               if (this.comboResetTimer === 0) {
-                this.comboStep = 0; // コンボリセット
+                this.comboStep = 0;
               }
             }
           }
@@ -134,14 +139,17 @@
           this.isAttacking = true;
           this.attackTimer = 15;
 
-          if (this.comboStep === 0) {
-            enemies.forEach(e => {
-              if (!e.isDead() && this.checkHit(e)) {
-                e.takeDamage(10, 1);
-                if (e.isDead()) score += 100; // 敵撃破でスコア加算
-              }
-            });
-          }
+          // コンボごとに違う効果音
+          let soundId = this.comboStep === 0 ? "hitSound1" :
+                        this.comboStep === 1 ? "hitSound2" : "hitSound3";
+
+          enemies.forEach(e => {
+            if (!e.isDead() && this.checkHit(e)) {
+              e.takeDamage(10, 1);
+              if (e.isDead()) score += 100;
+              document.getElementById(soundId).play();
+            }
+          });
         }
       }
 
@@ -174,8 +182,17 @@
       }
 
       draw() {
+        // 胴体
         ctx.fillStyle = this.invincible ? "cyan" : "blue";
         ctx.fillRect(this.x - cameraX, this.y, this.width, this.height);
+
+        // 目
+        ctx.fillStyle = "white";
+        ctx.fillRect(this.x - cameraX + 15, this.y + 15, 15, 15);
+        ctx.fillRect(this.x - cameraX + 35, this.y + 15, 15, 15);
+        ctx.fillStyle = "black";
+        ctx.fillRect(this.x - cameraX + 20, this.y + 20, 5, 5);
+        ctx.fillRect(this.x - cameraX + 40, this.y + 20, 5, 5);
 
         // HPバー
         ctx.fillStyle = "lime";
@@ -186,6 +203,7 @@
         ctx.font = "20px Arial";
         ctx.fillText("Score: " + score, 20, 60);
 
+        // 攻撃エフェクト
         if (this.isAttacking) {
           ctx.fillStyle = "red";
           if (this.comboStep === 0) {
@@ -239,7 +257,7 @@
         } else {
           if (this.checkCollision(player)) {
             player.takeDamage(5);
-            this.attackCooldown = 60; // クールダウン
+            this.attackCooldown = 60;
           }
         }
       }
@@ -255,7 +273,8 @@
         this.hp -= amount;
         if (this.hp <= 0 && !this.deadFlag) {
           this.deadFlag = true;
-          score += 100; // スコア加算
+          score += 100;
+          effects.push(new Effect(this.x, this.y)); // 撃破エフェクト追加
         }
         if (knockbackDir !== 0) {
           this.x += knockbackDir * 30;
@@ -281,6 +300,35 @@
         }
       }
     }
+    // ====================== Effect Class ======================
+    let effects = [];
+
+    class Effect {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.timer = 30; // 表示フレーム数
+      }
+
+      update() {
+        this.timer--;
+      }
+
+      draw() {
+        if (this.timer > 0) {
+          ctx.fillStyle = "orange";
+          ctx.beginPath();
+          ctx.arc(this.x - cameraX, this.y, 40 - this.timer, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      isFinished() {
+        return this.timer <= 0;
+      }
+    }
+
+    // ====================== Game Setup ======================
     let player = new Player(100, 100);
     let enemies = [
       new Enemy(400, 300),
@@ -292,6 +340,7 @@
       if (e.code === "Space") player.attack(enemies);
     });
 
+    // ====================== Game Loop ======================
     function gameLoop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawBackground();
@@ -307,6 +356,13 @@
           e.draw();
         }
       });
+
+      // エフェクト更新・描画
+      effects.forEach(effect => {
+        effect.update();
+        effect.draw();
+      });
+      effects = effects.filter(e => !e.isFinished());
 
       // ステージクリア判定
       if (!stageClear && enemies.every(e => e.isDead())) {
