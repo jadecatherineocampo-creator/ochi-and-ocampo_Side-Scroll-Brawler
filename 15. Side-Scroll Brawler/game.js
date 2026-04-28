@@ -1,79 +1,356 @@
-// Player object
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let keys = {};
+window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+let cameraX = 0;
+let stageClear = false;
+let clearDistance = 0;
+let score = 0;
+
+// ====================== 背景描画 ======================
+function drawBackground() {
+  ctx.fillStyle = "#444";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#666";
+  for (let i = -cameraX % 200; i < canvas.width; i += 200) {
+    ctx.fillRect(i, 100, 100, 20);
+    ctx.fillRect(i, 400, 150, 30);
+  }
+}
+
+// ====================== Player Class ======================
 class Player {
   constructor(x, y) {
     this.x = x;
     this.y = y;
-    this.width = 50;
-    this.height = 80;
-    this.state = "idle"; // idle, attack, run, jump, etc.
+    this.width = 60;
+    this.height = 60;
+    this.speed = 6;
+    this.hp = 100;
+    this.isAttacking = false;
+    this.attackTimer = 0;
     this.comboStep = 0;
-    this.attackCooldown = false;
+    this.invincible = false;
+    this.dashSpeed = 12;
+    this.comboResetTimer = 0;
   }
 
-  update(keys) {
-    // Movement logic
-    if (keys["ArrowRight"]) {
-      this.x += 5;
-      this.state = "run";
-    } else if (keys["ArrowLeft"]) {
-      this.x -= 5;
-      this.state = "run";
+  update(enemies) {
+    if (!stageClear) {
+      let dx = 0, dy = 0;
+      if (keys["a"] || keys["arrowleft"]) dx -= this.speed;
+      if (keys["d"] || keys["arrowright"]) dx += this.speed;
+      if (keys["w"] || keys["arrowup"]) dy -= this.speed;
+      if (keys["s"] || keys["arrowdown"]) dy += this.speed;
+
+      if (!this.isAttacking) {
+        this.x += dx;
+        this.y += dy;
+      }
+
+      if (this.isAttacking) {
+        this.attackTimer--;
+
+        if (this.comboStep === 1) {
+          this.invincible = true;
+          let target = this.findFrontEnemy(enemies);
+          if (target) {
+            let dirX = Math.sign(target.x - this.x);
+            let dirY = Math.sign(target.y - this.y);
+            if (!this.checkCollision(target)) {
+              this.x += dirX * this.dashSpeed;
+              this.y += dirY * (this.dashSpeed / 2);
+            } else {
+              target.takeDamage(10);
+              if (target.isDead()) score += 100;
+              this.isAttacking = false;
+            }
+          }
+        }
+
+        if (this.comboStep === 2) {
+          this.invincible = true;
+        }
+
+        if (this.attackTimer <= 0) {
+          this.isAttacking = false;
+          this.invincible = false;
+          this.comboStep = (this.comboStep + 1) % 3;
+          this.comboResetTimer = 180;
+        }
+      } else {
+        if (this.comboResetTimer > 0) {
+          this.comboResetTimer--;
+          if (this.comboResetTimer === 0) {
+            this.comboStep = 0;
+          }
+        }
+      }
     } else {
-      if (this.state !== "attack") this.state = "idle";
+      this.x += this.speed;
+      clearDistance += this.speed;
+    }
+
+    cameraX = this.x - canvas.width / 2;
+  }
+  attack(enemies) {
+    if (!this.isAttacking && !stageClear) {
+      this.isAttacking = true;
+      this.attackTimer = 15;
+
+      // コンボごとに違う効果音
+      let soundId = this.comboStep === 0 ? "hitSound1" :
+                    this.comboStep === 1 ? "hitSound2" : "hitSound3";
+
+      enemies.forEach(e => {
+        if (!e.isDead() && this.checkHit(e)) {
+          e.takeDamage(10, 1);
+          if (e.isDead()) score += 100;
+          document.getElementById(soundId).play();
+        }
+      });
     }
   }
 
-  attack(enemies) {
-    if (this.attackCooldown) return;
-    this.state = "attack";
-    this.comboStep = (this.comboStep + 1) % 3; // 3-hit combo
-    this.attackCooldown = true;
-
-    // Generate hitbox
-    const hitbox = {
-      x: this.x + this.width,
-      y: this.y,
-      width: 40,
-      height: this.height
-    };
-
-    enemies.forEach(enemy => {
-      if (this.checkCollision(hitbox, enemy)) {
-        enemy.takeDamage(10);
-      }
-    });
-
-    // End attack after a short delay
-    setTimeout(() => {
-      this.attackCooldown = false;
-      this.state = "idle";
-    }, 300);
+  checkHit(enemy) {
+    let attackBox;
+    if (this.comboStep === 0) {
+      attackBox = {x: this.x + 60, y: this.y + 15, w: 80, h: 20};
+    } else if (this.comboStep === 1) {
+      attackBox = {x: this.x + 40, y: this.y - 30, w: 30, h: 120};
+    } else {
+      attackBox = {x: this.x + 60, y: this.y - 40, w: 90, h: 40};
+    }
+    return !(enemy.x > attackBox.x + attackBox.w ||
+             enemy.x + enemy.width < attackBox.x ||
+             enemy.y > attackBox.y + attackBox.h ||
+             enemy.y + enemy.height < attackBox.y);
   }
 
-  checkCollision(a, b) {
-    return (
-      a.x < b.x + b.width &&
-      a.x + a.width > b.x &&
-      a.y < b.y + b.height &&
-      a.y + a.height > b.y
-    );
+  checkCollision(obj) {
+    return !(this.x > obj.x + obj.width ||
+             this.x + this.width < obj.x ||
+             this.y > obj.y + obj.height ||
+             this.y + this.height < obj.y);
+  }
+
+  takeDamage(amount) {
+    if (!this.invincible) {
+      this.hp -= amount;
+    }
+  }
+
+  draw() {
+    // 胴体
+    ctx.fillStyle = this.invincible ? "cyan" : "blue";
+    ctx.fillRect(this.x - cameraX, this.y, this.width, this.height);
+
+    // 目
+    ctx.fillStyle = "white";
+    ctx.fillRect(this.x - cameraX + 15, this.y + 15, 15, 15);
+    ctx.fillRect(this.x - cameraX + 35, this.y + 15, 15, 15);
+    ctx.fillStyle = "black";
+    ctx.fillRect(this.x - cameraX + 20, this.y + 20, 5, 5);
+    ctx.fillRect(this.x - cameraX + 40, this.y + 20, 5, 5);
+
+    // HPバー
+    ctx.fillStyle = "lime";
+    ctx.fillRect(20, 20, this.hp * 2, 20);
+
+    // スコア表示
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText("Score: " + score, 20, 60);
+
+    // 攻撃エフェクト
+    if (this.isAttacking) {
+      ctx.fillStyle = "red";
+      if (this.comboStep === 0) {
+        ctx.fillRect(this.x - cameraX + 60, this.y + 15, 80, 20);
+      } else if (this.comboStep === 1) {
+        ctx.fillRect(this.x - cameraX + 40, this.y - 30, 30, 120);
+      } else if (this.comboStep === 2) {
+        ctx.fillRect(this.x - cameraX + 60, this.y - 40, 90, 40);
+      }
+    }
   }
 }
 
-// Enemy object
+// ====================== Enemy Class ======================
 class Enemy {
   constructor(x, y) {
     this.x = x;
     this.y = y;
     this.width = 50;
     this.height = 80;
-    this.hp = 30;
+    this.hp = 50;
+    this.speed = 1.8;
+    this.attackCooldown = 0;
+    this.deadFlag = false;
   }
 
-  takeDamage(amount) {
+  update(player, enemies) {
+    if (this.hp <= 0) return;
+
+    // プレイヤーに近づく
+    if (this.x > player.x + 50) this.x -= this.speed;
+    else if (this.x < player.x - 50) this.x += this.speed;
+    if (this.y > player.y + 20) this.y -= this.speed;
+    else if (this.y < player.y - 20) this.y += this.speed;
+
+    // 他の敵と重ならないように
+    enemies.forEach(other => {
+      if (other !== this && !other.isDead()) {
+        if (this.checkCollision(other)) {
+          if (this.x < other.x) this.x -= 1;
+          else this.x += 1;
+          if (this.y < other.y) this.y -= 1;
+          else this.y += 1;
+        }
+      }
+    });
+
+    // 攻撃
+    if (this.attackCooldown > 0) {
+      this.attackCooldown--;
+    } else {
+      if (this.checkCollision(player)) {
+        player.takeDamage(5);
+        this.attackCooldown = 60;
+      }
+    }
+  }
+  checkCollision(obj) {
+    return !(this.x > obj.x + obj.width ||
+             this.x + this.width < obj.x ||
+             this.y > obj.y + obj.height ||
+             this.y + this.height < obj.y);
+  }
+
+  takeDamage(amount, knockbackDir = 0) {
     this.hp -= amount;
-    if (this.hp <= 0) {
-      console.log("Enemy defeated!");
+    if (this.hp <= 0 && !this.deadFlag) {
+      this.deadFlag = true;
+      score += 100;
+      effects.push(new Effect(this.x, this.y)); // 撃破エフェクト追加
+      document.getElementById("enemyExplosion").play(); // 撃破効果音
+    }
+    if (knockbackDir !== 0) {
+      this.x += knockbackDir * 30;
+    }
+  }
+
+  isDead() {
+    return this.hp <= 0;
+  }
+
+  draw() {
+    if (this.hp > 0) {
+      ctx.fillStyle = "#cc2222";
+      ctx.fillRect(this.x - cameraX, this.y, this.width, this.height);
+
+      ctx.fillStyle = "yellow";
+      ctx.fillRect(this.x - cameraX + 15, this.y + 25, 8, 8);
+      ctx.fillRect(this.x - cameraX + 30, this.y + 25, 8, 8);
+
+      const barWidth = (this.hp / 50) * this.width;
+      ctx.fillStyle = this.hp > 20 ? "#ffdd44" : "#ff4444";
+      ctx.fillRect(this.x - cameraX, this.y - 12, barWidth, 6);
     }
   }
 }
+
+// ====================== Effect Class ======================
+let effects = [];
+
+class Effect {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.timer = 30; // 表示フレーム数
+  }
+
+  update() {
+    this.timer--;
+  }
+
+  draw() {
+    if (this.timer > 0) {
+      ctx.fillStyle = "orange";
+      ctx.beginPath();
+      ctx.arc(this.x - cameraX, this.y, 40 - this.timer, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  isFinished() {
+    return this.timer <= 0;
+  }
+}
+
+// ====================== Game Setup ======================
+let player = new Player(100, 100);
+let enemies = [
+  new Enemy(400, 300),
+  new Enemy(600, 500),
+  new Enemy(800, 400)
+];
+
+window.addEventListener("keydown", e => {
+  if (e.code === "Space") player.attack(enemies);
+});
+
+// ====================== Game Loop ======================
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBackground();
+
+  // プレイヤー更新・描画
+  player.update(enemies);
+  player.draw();
+
+  // 敵更新・描画
+  enemies.forEach(e => {
+    if (!e.isDead()) {
+      e.update(player, enemies);
+      e.draw();
+    }
+  });
+
+  // エフェクト更新・描画
+  effects.forEach(effect => {
+    effect.update();
+    effect.draw();
+  });
+  effects = effects.filter(e => !e.isFinished());
+
+  // ステージクリア判定
+  if (!stageClear && enemies.every(e => e.isDead())) {
+    stageClear = true;
+    clearDistance = 0;
+  }
+
+  if (stageClear) {
+    ctx.fillStyle = "white";
+    ctx.font = "40px Arial";
+    ctx.fillText("Stage Clear!", 200, 200);
+
+    clearDistance += player.speed;
+
+    if (clearDistance > 600) {
+      enemies = [
+        new Enemy(player.x + 800, 300),
+        new Enemy(player.x + 1000, 400)
+      ];
+      stageClear = false;
+    }
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
