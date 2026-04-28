@@ -190,6 +190,30 @@
             }
         }
 
+        
+　　　　　// ====================== 背景関連 ======================
+　　　　　　　let bgX = 0;   // ← 新規追加（将来的にカメラで使う準備）
+
+　　　　　　　function drawBackground() {
+    　　　// 空のグラデーション
+    　　　　　const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+    　　　　　　　　　　　　　　gradient.addColorStop(0, "#1e3a8a");
+    　　　　　　　　　　　　　　gradient.addColorStop(1, "#3b82f6");
+    　　　　　　　　　　　　　　ctx.fillStyle = gradient;
+    　　　　　　　　　　　　　　ctx.fillRect(0, 0, canvas.width, 280);
+
+    　　　// 遠景の山
+    　　　　　ctx.fillStyle = "#1e40af";
+    　　　// ... 山と木の描画コード ...
+
+    　　　// 地面
+    　　　　　ctx.fillStyle = "#4d4038";
+    　　　　　ctx.fillRect(0, 300, canvas.width, canvas.height - 300);
+
+    　　　　　ctx.fillStyle = "#166534";
+    　　　　　ctx.fillRect(0, 300, canvas.width, 20);
+　　　　　}
+
         // ====================== Enemy Class ======================
         class Enemy {
             constructor(x, y) {
