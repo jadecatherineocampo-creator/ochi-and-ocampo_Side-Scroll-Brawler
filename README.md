@@ -9,7 +9,7 @@
 
 ---
 
-## Table of Contents
+ Table of Contents
  
 - [Game Description](#game-description)
 - [Features](#features)
