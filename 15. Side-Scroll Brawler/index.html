@@ -40,8 +40,11 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
+        // ====================== ゲーム定数 ======================
+        const GROUND_Y = 300;   // 地面のY座標（これを基準に全て調整）
+
         // ====================== ゲーム状態 ======================
-        let gameState = "menu"; // "menu", "playing", "gameover"
+        let gameState = "menu";
         let score = 0;
 
         // ====================== 入力処理 ======================
@@ -101,8 +104,8 @@
                     this.currentFrame = (this.currentFrame + 1) % this.getMaxFrames();
                 }
 
-                // 画面端制限（カメラが入る前は簡易）
                 if (this.x < 20) this.x = 20;
+                if (this.x > canvas.width - this.width - 20) this.x = canvas.width - this.width - 20;
             }
 
             attack(enemies) {
@@ -155,7 +158,6 @@
             }
 
             draw() {
-                // スプライト未対応時は仮のキャラ描画
                 ctx.save();
                 if (!this.facingRight) {
                     ctx.translate(this.x + this.width, this.y);
@@ -168,7 +170,7 @@
                 }
                 ctx.restore();
 
-                // 簡単な頭（目）
+                // 目
                 ctx.fillStyle = "white";
                 const eyeX = this.facingRight ? this.x + 35 : this.x + 10;
                 ctx.fillRect(eyeX, this.y + 25, 8, 8);
@@ -203,12 +205,10 @@
                 ctx.fillStyle = "#cc2222";
                 ctx.fillRect(this.x, this.y, this.width, this.height);
 
-                // 敵の目
                 ctx.fillStyle = "yellow";
                 ctx.fillRect(this.x + 15, this.y + 25, 8, 8);
                 ctx.fillRect(this.x + 30, this.y + 25, 8, 8);
 
-                // HPバー
                 const barWidth = (this.hp / 50) * this.width;
                 ctx.fillStyle = this.hp > 20 ? "#ffdd44" : "#ff4444";
                 ctx.fillRect(this.x, this.y - 12, barWidth, 6);
@@ -216,19 +216,20 @@
         }
 
         // ====================== 背景関連 ======================
-        let bgX = 0; // 背景スクロール用（カメラの準備）
+        let bgX = 0;
 
         function drawBackground() {
-            // 空（グラデーション風）
+            // 空
             const gradient = ctx.createLinearGradient(0, 0, 0, 250);
             gradient.addColorStop(0, "#1e3a8a");
             gradient.addColorStop(1, "#3b82f6");
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, 280);
 
-            // 遠景の山や雲（シンプルな三角と長方形）
+            // 遠景の山
             ctx.fillStyle = "#1e40af";
-            ctx.fillRect(0, 180, canvas.width, 100); // 遠い山
+            ctx.fillRect(0, 180, canvas.width, 100);
+
             ctx.beginPath();
             ctx.moveTo(100 + bgX*0.2, 180);
             ctx.lineTo(250 + bgX*0.2, 100);
@@ -241,18 +242,18 @@
             ctx.lineTo(800 + bgX*0.2, 180);
             ctx.fill();
 
-            // 中景の木や建物（簡易）
+            // 中景
             ctx.fillStyle = "#166534";
             ctx.fillRect(150 + bgX*0.5, 220, 60, 80);
             ctx.fillRect(550 + bgX*0.5, 200, 80, 100);
 
             // 地面
             ctx.fillStyle = "#4d4038";
-            ctx.fillRect(0, 300, canvas.width, canvas.height - 300);
+            ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
 
-            // 地面の草やライン
+            // 地面の草
             ctx.fillStyle = "#166534";
-            ctx.fillRect(0, 300, canvas.width, 20);
+            ctx.fillRect(0, GROUND_Y, canvas.width, 25);
         }
 
         // ====================== ゲームオブジェクト ======================
@@ -260,10 +261,10 @@
         let enemies = [];
 
         function initGame() {
-            player = new Player(120, 220);
+            player = new Player(120, GROUND_Y - 80);   // 地面からキャラの高さ分引く
             enemies = [
-                new Enemy(550, 220),
-                new Enemy(750, 220)
+                new Enemy(550, GROUND_Y - 80),
+                new Enemy(750, GROUND_Y - 80)
             ];
             score = 0;
             bgX = 0;
@@ -283,10 +284,9 @@
             document.getElementById("score").textContent = score;
         }
 
-        // ====================== メインループ ======================
+        // ====================== メインゲームループ ======================
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             drawBackground();
 
             if (gameState === "playing") {
@@ -301,16 +301,16 @@
                     }
                 }
 
-                // 敵の追加（簡易）
+                // 敵の追加
                 if (enemies.length < 3 && Math.random() < 0.02) {
-                    enemies.push(new Enemy(canvas.width + 30, 220));
+                    enemies.push(new Enemy(canvas.width + 30, GROUND_Y - 80));
                 }
 
                 // 描画
                 player.draw();
                 enemies.forEach(enemy => enemy.draw());
 
-                // プレイヤーと敵の接触判定
+                // 接触ダメージ
                 enemies.forEach(enemy => {
                     if (player.checkCollision(player, enemy)) {
                         player.takeDamage(8);
@@ -342,7 +342,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // ゲーム開始
+        // ====================== ゲーム開始 ======================
         gameLoop();
     </script>
 </body>
