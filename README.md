@@ -3,7 +3,7 @@
 > A side-scrolling beat-em-up built in vanilla JavaScript (Canvas API).  
 > Hand-crafted pixel sprites, Web Audio chiptune engine, and wave-based brawling combat.
 
-**Developed by:** Ocampo, Jade Catherine and Ochi, Nobutoshi
+**Developed by:** Ocampo, Jade Catherine, and Ochi, Nobutoshi
 **Language:** JavaScript (HTML5 Canvas)  
 **Course / Project:** Programming 2 — Game Sprint Project
 
