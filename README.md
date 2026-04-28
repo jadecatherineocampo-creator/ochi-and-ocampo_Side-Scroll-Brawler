@@ -10,7 +10,7 @@
 ---
 
 ## Table of Contents
-
+ 
 - [Game Description](#game-description)
 - [Features](#features)
 - [Setup Instructions](#setup-instructions)
@@ -19,92 +19,87 @@
 - [Controls](#controls)
 - [Gameplay Guide](#gameplay-guide)
 - [Enemy Types](#enemy-types)
-- [Boss Wave](#boss-wave)
+- [Boss Fight](#boss-fight)
 - [Upgrades](#upgrades)
 - [Code Structure](#code-structure)
 - [Authors](#authors)
-
 ---
-
+ 
 ## Game Description
-
-**IRON FIST CHRONICLES** is a wave-based side-scrolling brawler where you fight through 5 stages of escalating street combat. Punch, kick, and unleash special attacks to clear each stage and face the Iron Lord in a climactic final boss fight.
-
+ 
+**IRON FIST CHRONICLES** is a wave-based side-scrolling beat-em-up where you fight through 5 stages of increasingly brutal street thugs, armed goons, and brutes — all leading up to a final showdown against the **Iron Lord**. Survive every stage, rack up kills, and post a high score.
+ 
 The game features:
-
-- Procedurally animated pixel-art characters drawn entirely via Canvas 2D primitives
-- Three-attack combat system: Punch, Kick, and Special
-- Four enemy types with distinct AI behaviors and attack patterns
-- A level-up system with stat upgrade choices between stages
-- Combo multiplier scoring
-- Dynamic chiptune soundtrack with three handwritten tracks (Web Audio API)
-- Full sound effects for all actions
-- Responsive scaling to any screen size
-
+ 
+- Fully hand-drawn pixel art characters rendered in real time via Canvas 2D
+- 5 distinct stages with unique enemy lineups and music tracks
+- 4 enemy types with individual AI behaviors
+- A level-up upgrade system with 7 stat boosts to choose from
+- Chiptune Web Audio engine — all music and SFX generated programmatically
+- CRT scanline + vignette post-processing overlay
+- Parallax pixel-art city backgrounds with per-stage color themes
+- Combo multiplier system for score bonuses
 ---
-
+ 
 ## Features
-
+ 
 | Feature | Details |
 |---|---|
-| Combat System | Punch, Kick, and Special attacks with individual cooldowns |
-| Enemy AI | 4 types: Grunt, Knife, Gun, Brute — each with unique behavior |
-| Boss Fight | Iron Lord on Stage 5 with multi-phase attacks and spread fire |
-| Level-Up System | Earn XP per kill; choose from 3 random stat upgrades on level-up |
-| Combo System | Consecutive hits multiply score; resets on taking damage |
-| Chiptune Engine | 3 original tracks with lead melody, bass, and percussion (Web Audio) |
-| Pixel Sprites | All characters drawn dynamically via Canvas 2D — no image assets |
-| HUD | Live HP bar, XP bar, player level, stage counter, special cooldown, score |
-| Pickup System | HP pills drop from defeated enemies (30% chance) |
-| Persistent Camera | Smooth camera tracking with world scroll across 3000px stages |
-
+| Main Menu | New Game and How to Play options |
+| Core Gameplay Loop | Side-scroll brawler with delta-time physics |
+| Game Over Screen | Final score, kills, stage reached |
+| Wave / Stage System | 5 stages, each cleared by defeating all spawned enemies |
+| Enemy AI | 4 types: Grunt, Knife, Gun, Brute |
+| Boss System | Iron Lord final boss with ranged triple-shot at low HP |
+| Upgrade System | 7 upgrades: Iron Fist, Iron Boot, Nova Blast, Iron Skin, Wind Step, Chi Flow, Eagle Jump |
+| HUD | Live HP bar, XP bar, player level, stage counter, score, special cooldown |
+| Combo System | Hit streak counter with score multiplier |
+| Chiptune Audio | 3 music tracks + 8 SFX, all synthesized via Web Audio API |
+ 
 ---
-
+ 
 ## Setup Instructions
-
+ 
 ### Playing on Desktop / Laptop
-
-No installation required. The game runs entirely in your browser.
-
+ 
+No installation required. IRON FIST CHRONICLES runs entirely in your browser.
+ 
 **Step 1 — Download the file**
-
+ 
 Click the green `Code` button on this repository, then select **Download ZIP**. Extract the ZIP file to any folder on your computer.
-
+ 
 **Step 2 — Open the game**
-
-Find `ScrollBrawl.html` (or `index.html`) inside the extracted folder. Double-click it. It will open directly in your default web browser (Chrome, Edge, or Firefox recommended).
-
+ 
+Find `Scroll-Brawler.html` inside the extracted folder. Double-click it. It will open directly in your default web browser (Chrome, Edge, or Firefox recommended).
+ 
 **Step 3 — Play**
-
-Click anywhere on the title screen or press **Enter** to start fighting.
-
+ 
+Click anywhere on the title screen or press **Enter** to reach the main menu, then click **NEW GAME** and start brawling.
+ 
 > **Note:** No internet connection is required after downloading. No server, Node.js, or installs of any kind are needed.
-
+ 
 ---
-
+ 
 ### Playing via GitHub Pages
-
+ 
 To host the game online so anyone can play it with just a link:
-
+ 
 1. Push all project files to your GitHub repository
-2. Make sure the game file is named `index.html` (or update the Pages source)
+2. Make sure the game file is named `Scroll-Brawler.html`
 3. Go to your repo on GitHub → **Settings** → **Pages**
 4. Under **Source**, select `Deploy from a branch`
 5. Choose branch: `main`, folder: `/ (root)` → click **Save**
 6. Wait about 1 minute, then your game will be live at:
-
 ```
-https://<your-username>.github.io/<your-repo-name>/
+https://<your-username>.github.io/<your-repo-name>/Scroll-Brawler.html
 ```
-
-Share this link for live demos or submissions.
-
+ 
 ---
-
+ 
 ## Controls
-
+ 
 ### Desktop Controls
-
+ 
 | Input | Action |
 |---|---|
 | `A` or `←` | Move Left |
@@ -113,129 +108,126 @@ Share this link for live demos or submissions.
 | `J` | Punch |
 | `K` | Kick |
 | `L` | Special Attack |
-| `P` | Pause / Resume |
-| `Enter` | Start Game (title screen) |
-
-> Special Attack has a longer cooldown. Watch the **SPECIAL RDY** indicator in the HUD before committing.
-
+| `P` | Pause / Unpause |
+ 
+> Attacks auto-combo into enemies in range. Use **Special (L)** when surrounded — it hits a wide area but has a cooldown.
+ 
 ---
-
+ 
 ## Gameplay Guide
-
-**Objective:** Fight through 5 stages of enemies. Clear all enemies in a stage to advance. The game ends when your HP reaches zero.
-
-### Wave Progression
-
-- Each stage spawns more enemies than the last, with more dangerous types introduced
-- Enemy speed and attack frequency scale with stage number
-- Completing a stage advances you to the next automatically after a brief announcement
-
+ 
+**Objective:** Fight through all 5 stages by defeating every enemy in each wave. The game ends when your HP reaches zero.
+ 
+### Stage Progression
+ 
+- Each stage spawns a set number of enemies before clearing (`goal` count per stage)
+- Enemy speed, attack damage, and type variety increase each stage
+- Completing a stage transitions automatically after a short delay
 ### Scoring
-
-- **Grunt:** 100 pts
-- **Knife:** 100 pts
-- **Gun:** 100 pts
-- **Brute:** 300 pts
-- **Boss (Iron Lord):** 5,000 pts
-- Combo multiplier: every 5 consecutive hits adds a score bonus tier
-
+ 
+- **Grunt:** 100 pts × combo multiplier
+- **Knife:** 100 pts × combo multiplier
+- **Gun:** 100 pts × combo multiplier
+- **Brute:** 300 pts × combo multiplier
+- **Boss (Iron Lord):** 5,000 pts flat
+### Combo System
+ 
+- Chaining hits without taking damage builds a **COMBO** counter
+- A multiplier based on your combo is applied to each kill's score
+- Taking a hit or letting the combo timer expire resets it to zero
 ### HP System
-
-- You start with **100 HP**
-- After taking a hit you receive brief invincibility frames
-- HP pills drop from enemies with a 30% chance — prioritize picking them up when low
-- Some upgrades increase your max HP
-
-### Special Attack
-
-- Deals your highest damage in a wide arc
-- Fires 22 orange sparks on impact for visual feedback
-- Cooldown displayed live in the HUD (`SP Xs` when recharging, `SPECIAL RDY` when available)
-
+ 
+- Your fighter starts with **100 HP** (upgradeable via Iron Skin)
+- The HP bar turns yellow below 50% and red below 25%
+- HP slowly regenerates per second if you've unlocked the **Chi Flow** upgrade
+- Collect green **pill pickups** dropped by enemies to restore **+35 HP**
+### Special Attack (L)
+ 
+- Deals high AoE damage in a large forward arc
+- Has a **~17-second cooldown** — the HUD shows the remaining time
+- The cooldown can be reduced by upgrading the Nova Blast stat
 ---
-
+ 
 ## Enemy Types
-
-| Type | Behavior | HP | Threat Level |
-|---|---|---|---|
-| Grunt | Direct pursuit, melee attacks | 65 | Low |
-| Knife | Faster, melee — closes distance quickly | 52 | Medium |
-| Gun | Keeps range, fires projectiles | 46 | Medium |
-| Brute | Slow but tanky, heavy melee | 170 | High |
-
+ 
+| Type | Color | Behavior | HP | Threat Level |
+|---|---|---|---|---|
+| Grunt | Red | Direct pursuit, melee punch | 65 | Low |
+| Knife | Purple | Fast mover, close-range lunge | 52 | Medium |
+| Gun | Blue | Keeps distance, fires projectiles | 46 | Medium |
+| Brute | Brown/Orange | Tanks hits, heavy melee | 170 | High |
+ 
 - All enemies display an HP bar above them during combat
-- Enemies flash white briefly when hit
-- Brutes take reduced knockback due to their size
-- Gun enemies fire homing-trajectory projectiles that must be dodged or blocked by positioning
-
+- Enemies flash when they take a hit
+- Enemies that physically touch your fighter deal damage and knock you back
+- Gun enemies fire blue projectiles — **jump over them** to dodge
+- Brutes are slow but hit hard; use kick and special to stagger them
 ---
-
-## Boss Wave
-
-Stage 5 replaces regular enemies with a single boss: **⚡ THE IRON LORD ⚡**
-
-Each boss has a dedicated health bar at the bottom of the screen.
-
-| Boss | Stage | HP | Special Attacks |
+ 
+## Boss Fight
+ 
+**Stage 5** replaces the normal enemy wave with a single powerful boss: the **Iron Lord**.
+ 
+| Boss | HP | Shield | Special Attacks |
 |---|---|---|---|
-| Iron Lord | 5 | 720 | Spread fire (3-way), rapid shots below 35% HP |
-
+| ⚡ IRON LORD | 720 | None | 3-way spread shot when below 35% HP |
+ 
 **Boss Mechanics:**
-
-- **Phase 2 (below 35% HP):** The Iron Lord enters a rage state and fires 3-way spread projectiles instead of single shots
-- **Crown indicator:** The boss displays a pixel crown and red jewel to distinguish it visually
-- **Defeating the boss** triggers a Victory screen with final score and kill count
-
+ 
+- **Phase Transition** — below 35% HP, the Iron Lord switches to a triple-shot spread that fires in 3 directions simultaneously
+- **Crown & Armor** — visually distinct with a gold crown and shoulder armor plates
+- A dedicated **boss HP bar** appears at the bottom of the screen during the fight
+- Defeating the Iron Lord triggers the **Victory** screen
 ---
-
+ 
 ## Upgrades
-
-On leveling up (earned through XP from kills), you choose one of 3 randomly drawn upgrades:
-
+ 
+When your player levels up (by earning XP from kills), you choose **1 of 3 randomly offered upgrades**:
+ 
 | Icon | Name | Effect |
 |---|---|---|
-| 💪 | IRON FIST | Punch damage +15 |
-| 🦵 | IRON BOOT | Kick damage +20 |
-| ⚡ | NOVA BLAST | Special damage +30 |
-| ❤️ | IRON SKIN | Max HP +50 (also restores 50 HP) |
-| 🌪 | WIND STEP | Move speed +1.0 |
-| 🌿 | CHI FLOW | HP regeneration per second |
-| 🦅 | EAGLE JUMP | Jump power +3 |
-
-You can level up a maximum of **5 times** per run. XP requirements scale with each level.
-
+| 💪 | **Iron Fist** | Punch damage +15 |
+| 🦵 | **Iron Boot** | Kick damage +20 |
+| ⚡ | **Nova Blast** | Special damage +30 |
+| ❤️ | **Iron Skin** | Max HP +50 (also heals +50 immediately) |
+| 🌪 | **Wind Step** | Move speed +1.0 |
+| 🌿 | **Chi Flow** | Adds HP regeneration per second |
+| 🦅 | **Eagle Jump** | Jump power +3 |
+ 
+- XP required per level scales up by ×1.65 each level
+- Maximum player level is **5**
 ---
-
-Code Structure
-
+ 
+## Code Structure
+ 
 ```
 iron-fist-chronicles/
-├── index.html        ← Entire game (HTML structure + CSS styling + JavaScript logic)
-└── README.md         ← This file
+├── Scroll-Brawler.html    ← Entire game (HTML + CSS + JavaScript)
+└── README.md              ← This file
 ```
-
-All game logic is inside the `<script>` tag of `index.html`, organized into clearly separated sections:
-
+ 
+All game logic lives inside the `<script>` tag of `Scroll-Brawler.html`, organized into clearly separated sections:
+ 
 | Section | Description |
 |---|---|
-| Web Audio Engine | Chiptune note player, drum synth, music track scheduler, SFX |
-| Title Logo Renderer | Pixel-art fist logo drawn to offscreen canvas at startup |
-| Game State (`initG`) | All runtime state: player, enemies, projectiles, sparks, camera |
-| `mkPlayer()` | Player entity factory with stats, cooldowns, and physics properties |
-| `updPlayer()` | Input handling, physics, jump, animation walk cycle, camera follow |
-| `doAtk()` | Attack dispatch — hitbox generation, damage application, combo counter |
-| `mkEnemy()` | Enemy factory for all 4 types + boss variant |
-| `updEnemies()` | AI movement, range checks, attack firing, death handling |
-| `fireProj()` | Projectile spawner for ranged enemies and boss |
-| `spawnLogic()` | Wave-based enemy spawning with difficulty scaling |
-| `checkLevel()` | Stage clear detection and boss spawn trigger |
-| `render()` | Full frame draw: background, parallax, entities, sparks, floating texts |
-| `drawChar()` | Universal pixel character renderer — draws player and all enemies procedurally |
-| `drawProjectile()` | Shaped bullet renderer with motion trail |
-| `drawPickup()` | Bobbing HP pill with glow ring |
-| `hudSync()` | Live DOM updates for HP bar, XP bar, score, level, special cooldown |
-| `showLvlUp()` | Level-up card with 3 random upgrade buttons |
-| `announce()` | Stage name overlay with timed auto-dismiss |
-| `gameOver()` / `victory()` | End screens with score, kill count, and time |
-
+| `scaleFrame()` | Responsive scaling — fits the 800×500 game frame to any screen size |
+| Web Audio Engine | `playNote()`, `playDrum()`, `sfx()`, `playTrack()` — all sound synthesized via Web Audio API |
+| `TRACKS[]` | 3 chiptune music tracks defined as note/duration arrays (Street Hustle, Warehouse Tension, Final Boss) |
+| Title & Menu | `showMenu()`, `showGuide()`, splash canvas logo drawing |
+| Game State `G` | Central state object — player, enemies, projectiles, sparks, score, level config |
+| `mkPlayer()` | Player entity factory with stats object |
+| Input Handling | `keydown` / `keyup` listeners — movement, attacks, pause |
+| `update(dt)` | Per-frame logic — player, enemies, projectiles, pickups, combos, spawn logic, level checks |
+| `updPlayer(dt)` | Player movement, jump, attack cooldowns, camera follow |
+| `doAtk(type)` | Attack dispatch — creates hitbox, checks enemy overlaps, applies damage |
+| `updEnemies(dt)` | Enemy AI — pursuit, range detection, melee/ranged attack logic |
+| `spawnLogic(dt)` | Timed enemy spawning based on stage goal and current alive count |
+| `checkLevel()` | Stage clear detection, boss spawn trigger, victory condition |
+| `render()` | Master draw call — background, ground, pickups, projectiles, characters, sparks, HUD texts |
+| `drawBG()` | Parallax pixel city — stars, moon, buildings, street lamps, fog, per-stage color theme |
+| `drawCharacter()` | Procedural pixel-art character renderer — animated limbs, palette swap per enemy type |
+| `showLvlUp()` | Level-up card UI — picks 3 random upgrades and renders selection buttons |
+| `hudSync()` | Syncs HP bar, XP bar, score, stage, and special cooldown to DOM elements |
+| `gameOver()` / `victory()` | End-state screens with stats |
+ 
 ---
