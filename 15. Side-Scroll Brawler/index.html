@@ -1,0 +1,151 @@
+<canvas id="gameCanvas" width="800" height="400"></canvas>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+class Player {
+  constructor(x, y, spriteSheet) {
+    this.x = x;
+    this.y = y;
+    this.spriteSheet = spriteSheet;
+    this.frameWidth = 64;
+    this.frameHeight = 64;
+    this.currentFrame = 0;
+    this.state = "idle";
+    this.frameCount = 0;
+    this.comboStep = 0;
+    this.attackCooldown = false;
+  }
+
+  update(enemies) {
+    // 移動処理
+    if (keys["ArrowRight"]) {
+      this.x += 4;
+      this.state = "run";
+    } else if (keys["ArrowLeft"]) {
+      this.x -= 4;
+      this.state = "run";
+    } else if (this.state !== "attack") {
+      this.state = "idle";
+    }
+
+    // 攻撃処理
+    if (keys[" "]) { // スペースキーで攻撃
+      this.attack(enemies);
+    }
+
+    // アニメーション更新
+    this.frameCount++;
+    if (this.frameCount % 8 === 0) {
+      this.currentFrame = (this.currentFrame + 1) % this.getMaxFrames();
+    }
+  }
+
+  attack(enemies) {
+    if (this.attackCooldown) return;
+    this.state = "attack";
+    this.comboStep = (this.comboStep + 1) % 3; // 3段コンボ
+    this.attackCooldown = true;
+
+    // ヒットボックス生成
+    const hitbox = {
+      x: this.x + this.frameWidth,
+      y: this.y,
+      width: 40,
+      height: this.frameHeight
+    };
+
+    enemies.forEach(enemy => {
+      if (this.checkCollision(hitbox, enemy)) {
+        enemy.takeDamage(10);
+      }
+    });
+
+    setTimeout(() => {
+      this.attackCooldown = false;
+      this.state = "idle";
+    }, 300);
+  }
+
+  getMaxFrames() {
+    switch (this.state) {
+      case "idle": return 4;
+      case "run": return 6;
+      case "attack": return 5;
+      default: return 1;
+    }
+  }
+
+  draw() {
+    let row = 0;
+    if (this.state === "run") row = 1;
+    if (this.state === "attack") row = 2;
+
+    ctx.drawImage(
+      this.spriteSheet,
+      this.currentFrame * this.frameWidth,
+      row * this.frameHeight,
+      this.frameWidth,
+      this.frameHeight,
+      this.x,
+      this.y,
+      this.frameWidth,
+      this.frameHeight
+    );
+  }
+
+  checkCollision(a, b) {
+    return (
+      a.x < b.x + b.width &&
+      a.x + a.width > b.x &&
+      a.y < b.y + b.height &&
+      a.y + a.height > b.y
+    );
+  }
+}
+
+class Enemy {
+  constructor(x, y, spriteSheet) {
+    this.x = x;
+    this.y = y;
+    this.width = 50;
+    this.height = 80;
+    this.hp = 30;
+    this.spriteSheet = spriteSheet;
+  }
+
+  takeDamage(amount) {
+    this.hp -= amount;
+    if (this.hp <= 0) {
+      console.log("Enemy defeated!");
+    }
+  }
+
+  draw() {
+    ctx.fillStyle = "red";
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+  }
+}
+
+const playerSprite = new Image();
+playerSprite.src = "player_spritesheet.png"; // idle/run/attack が行ごとに並んだ画像
+
+const enemies = [new Enemy(400, 200), new Enemy(600, 200)];
+const player = new Player(100, 200, playerSprite);
+
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  player.update(enemies);
+  player.draw();
+  enemies.forEach(enemy => enemy.draw());
+  requestAnimationFrame(gameLoop);
+}
+
+playerSprite.onload = () => {
+  gameLoop();
+};
+</script>
