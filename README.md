@@ -22,8 +22,7 @@
 - [Boss Fight](#boss-fight)
 - [Upgrades](#upgrades)
 - [Code Structure](#code-structure)
-- [Authors](#authors)
----
+
  
 ## Game Description
  
