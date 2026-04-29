@@ -229,4 +229,3 @@ All game logic lives inside the `<script>` tag of `Scroll-Brawler.html`, organiz
 | `hudSync()` | Syncs HP bar, XP bar, score, stage, and special cooldown to DOM elements |
 | `gameOver()` / `victory()` | End-state screens with stats |
  
----
